@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import auth from "../middleware/auth.js";
 import bcrypt from "bcryptjs";
-import { Resend } from "resend";
+import  Resend  from "resend";
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ router.post("/register", async (req, res) => {
   try {
     const { email, password, firstName, lastName, phone, idNumber } = req.body;
 
-    const existingUser = await User.findOne({ $or: [{ email }] });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -64,16 +64,14 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Incorrect email or password",
       });
     }
 
-    // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({
@@ -82,7 +80,6 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET || "fallback_secret",
@@ -133,6 +130,7 @@ router.get("/profile", auth, async (req, res) => {
   }
 });
 
+//Update user profile
 router.put("/profile", auth, async (req, res) => {
   try {
     const { firstName, lastName, phone, address, idNumber } = req.body;
@@ -161,6 +159,7 @@ router.put("/profile", auth, async (req, res) => {
   }
 });
 
+//Forgot password
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
@@ -200,20 +199,18 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
+//reset user password
 router.post("/reset-password", async (req, res) => {
   try {
     const { email, otp, newPassword, confirmPassword } = req.body;
-    if (newPassword !== confirmPassword) {
+    if (newPassword !== confirmPassword)
       return res.status(400).json({ message: "Passwords do not match" });
-    }
 
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const isMatch = await bcrypt.compare(otp, user.otp);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid OTP" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid OTP" });
 
     user.password = newPassword;
     user.otp = null;

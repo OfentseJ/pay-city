@@ -6,7 +6,9 @@ const userSchema = new mongoose.Schema(
     idNumber: {
       type: String,
       unique: true,
+      sparse: true, // Allows multiple docs with null/undefined
       match: /^[0-9]{13}$/,
+      default: null, // Explicitly allow null
     },
     firstName: {
       type: String,
